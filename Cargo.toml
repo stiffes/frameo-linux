@@ -1,0 +1,18 @@
+[package]
+name = "frameo-linux"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "A Linux CLI and desktop client for Frameo digital photo frames"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/stiffes/frameo-linux"
+
+[[bin]]
+name = "frameo"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4.5", features = ["derive"] }
+
+[dev-dependencies]
