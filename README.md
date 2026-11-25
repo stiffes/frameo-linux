@@ -4,7 +4,7 @@ Frameo Linux is an open-source Linux client for sending photos to Frameo digital
 
 The CLI is the first working interface. It does not require GTK or a running desktop session, so it can also be called from shell scripts and file-manager custom actions.
 
-> **Status: early development.** The Rust CLI is implemented as a frontend to the existing [unframeo](https://github.com/borje/unframeo) protocol client. A native Rust protocol implementation, GTK application, Nemo action and Flatpak package are not implemented yet.
+> **Status: early development.** The current CLI uses the existing [unframeo](https://github.com/borje/unframeo) executable as a temporary protocol backend. The project direction is a native Rust implementation; `unframeo` will be a development reference, not a runtime dependency. See the [native Rust protocol porting plan](docs/PORTING_PLAN.md). GTK, Nemo integration and Flatpak packaging are also not implemented yet.
 
 ## Current CLI
 
@@ -25,11 +25,13 @@ frameo frames
 frameo discover
 ```
 
-The commands above are implemented in this project, but require the separate `unframeo` executable to be installed. The CLI validates local photo paths before passing them to the backend. The backend handles the Frameo protocol, device pairing and transfer.
+The commands above are implemented in this project, but the current transitional adapter requires the separate `unframeo` executable. The CLI validates local photo paths and delegates pairing and transfer to that backend. This dependency is temporary and will be removed as the native Rust protocol implementation is completed.
 
 ## Install
 
-### 1. Install the unframeo backend
+The current transitional CLI requires the unframeo backend. This installation step will disappear once the native Rust backend is implemented.
+
+### 1. Install the temporary unframeo backend
 
 The upstream project currently requires Go 1.26.0 or newer:
 
@@ -89,13 +91,15 @@ flowchart LR
     NEMO["Nemo action<br/>(planned)"] --> CLI
     FM["Other file-manager<br/>custom actions"] --> CLI
     USER["Terminal / scripts"] --> CLI["frameo CLI<br/>(available)"]
-    CLI --> ADAPTER["Rust backend adapter<br/>(available)"]
-    ADAPTER --> UNFRAMEO["unframeo backend"]
-    UNFRAMEO --> FRAME["Frameo photo frame"]
-    CORE -.-> ADAPTER
+    CLI --> CORE
+    CORE --> NATIVE["Native Rust protocol<br/>(planned)"]
+    CORE -.-> ADAPTER["Temporary unframeo adapter<br/>(current)"]
+    ADAPTER -.-> UNFRAMEO["unframeo executable"]
+    NATIVE --> FRAME["Frameo photo frame"]
+    UNFRAMEO -.-> FRAME
 ```
 
-The initial backend is a separate process rather than copied or linked protocol code. This keeps the Rust frontend small while relying on an existing implementation of Frameo pairing and transfer. A native Rust backend can be evaluated later.
+The native Rust protocol will be shared by the CLI and GTK application. The current process adapter is only a bridge while the protocol is being ported; it is not the intended final architecture.
 
 ## Development
 
@@ -115,7 +119,7 @@ GitHub Actions runs these checks on pushes to `main` and pull requests.
 | unframeo process adapter | Implemented |
 | Pairing and photo upload | Delegated to unframeo |
 | CLI unit tests and CI | Added |
-| Native Rust Frameo protocol | Not started |
+| Native Rust Frameo protocol | Porting plan documented; implementation not started |
 | GTK4 application | Planned |
 | Shared GUI/CLI upload queue | Planned |
 | Nemo context-menu action | Planned |
