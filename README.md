@@ -119,7 +119,7 @@ GitHub Actions runs these checks on pushes to `main` and pull requests.
 | unframeo process adapter | Implemented |
 | Pairing and photo upload | Delegated to unframeo |
 | CLI unit tests and CI | Added |
-| Native Rust Frameo protocol | Porting plan documented; implementation not started |
+| Native Rust protocol foundation | Identity/config, SDG framing, nonces and NaCl box primitive added; transport not complete |
 | GTK4 application | Planned |
 | Shared GUI/CLI upload queue | Planned |
 | Nemo context-menu action | Planned |
