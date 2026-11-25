@@ -27,9 +27,9 @@ impl Key {
 
     pub fn from_hex(value: &str) -> Result<Self> {
         let bytes = hex::decode(value).context("key is not valid hexadecimal")?;
-        let bytes: [u8; 32] = bytes
-            .try_into()
-            .map_err(|bytes: Vec<u8>| anyhow::anyhow!("key has {} bytes; expected 32", bytes.len()))?;
+        let bytes: [u8; 32] = bytes.try_into().map_err(|bytes: Vec<u8>| {
+            anyhow::anyhow!("key has {} bytes; expected 32", bytes.len())
+        })?;
         Ok(Self(bytes))
     }
 }
@@ -99,10 +99,9 @@ mod tests {
 
     #[test]
     fn derives_rfc_7748_alice_public_key() {
-        let private = Key::from_hex(
-            "77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a",
-        )
-        .unwrap();
+        let private =
+            Key::from_hex("77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a")
+                .unwrap();
         let identity = Identity::from_private_key(private);
         assert_eq!(
             identity.public_key().to_hex(),

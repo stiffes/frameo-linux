@@ -84,7 +84,10 @@ pub fn write_frame<W: Write>(writer: &mut W, body: &[u8]) -> io::Result<()> {
     if body.len() > MAX_FRAME_SIZE {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            format!("SDG frame is {} bytes; maximum is {MAX_FRAME_SIZE}", body.len()),
+            format!(
+                "SDG frame is {} bytes; maximum is {MAX_FRAME_SIZE}",
+                body.len()
+            ),
         ));
     }
     writer.write_all(&(body.len() as u16).to_be_bytes())?;
@@ -133,7 +136,10 @@ mod tests {
         let expected = vec![0xab; 4096];
         let mut encoded = Vec::new();
         write_frame(&mut encoded, &expected).unwrap();
-        assert_eq!(read_frame(&mut Cursor::new(encoded), 16_416).unwrap(), expected);
+        assert_eq!(
+            read_frame(&mut Cursor::new(encoded), 16_416).unwrap(),
+            expected
+        );
     }
 
     #[test]
