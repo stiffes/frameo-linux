@@ -35,7 +35,6 @@ pub fn open_shared(ciphertext: &[u8], nonce: &Nonce, shared: &[u8; 32]) -> Resul
         .context("SDG secretbox authentication failed")
 }
 
-
 /// Encrypt with NaCl crypto_box semantics (16-byte authenticator + ciphertext).
 pub fn seal(
     plaintext: &[u8],
@@ -122,12 +121,10 @@ mod tests {
 
     #[test]
     fn precomputed_key_matches_pinned_reference() {
-        let client = Identity::from_private_key(Key::from_bytes(core::array::from_fn(|i| {
-            0x50 + i as u8
-        })));
-        let server = Identity::from_private_key(Key::from_bytes(core::array::from_fn(|i| {
-            0x80 + i as u8
-        })));
+        let client =
+            Identity::from_private_key(Key::from_bytes(core::array::from_fn(|i| 0x50 + i as u8)));
+        let server =
+            Identity::from_private_key(Key::from_bytes(core::array::from_fn(|i| 0x80 + i as u8)));
         let shared = precompute(&server.public_key(), &client.private_key()).unwrap();
         assert_eq!(
             hex(&shared),
