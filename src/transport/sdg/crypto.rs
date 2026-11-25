@@ -5,10 +5,7 @@
 //! a deterministic HELO packet test against the upstream reference fixture.
 
 use anyhow::{Context, Result};
-use crypto_box::{
-    aead::{Aead, KeyInit},
-    Nonce as BoxNonce, PublicKey, SalsaBox, SecretKey,
-};
+use crypto_box::{aead::Aead, Nonce as BoxNonce, PublicKey, SalsaBox, SecretKey};
 
 use super::{Key, Nonce};
 
@@ -62,7 +59,8 @@ mod tests {
             client_ephemeral_private[i] = 0x50 + i as u8;
         }
         let server = Identity::from_private_key(Key::from_bytes(server_private));
-        let client_ephemeral = Identity::from_private_key(Key::from_bytes(client_ephemeral_private));
+        let client_ephemeral =
+            Identity::from_private_key(Key::from_bytes(client_ephemeral_private));
         let nonce = Nonce::short(super::super::nonce::NONCE_HELLO, 0);
         let ciphertext = seal(
             &[0u8; 64],
@@ -100,13 +98,8 @@ mod tests {
         let alice = Identity::generate();
         let bob = Identity::generate();
         let nonce = Nonce::short(super::super::nonce::NONCE_HELLO, 7);
-        let mut ciphertext = seal(
-            b"hello",
-            &nonce,
-            &bob.public_key(),
-            &alice.private_key(),
-        )
-        .unwrap();
+        let mut ciphertext =
+            seal(b"hello", &nonce, &bob.public_key(), &alice.private_key()).unwrap();
         ciphertext[0] ^= 1;
         assert!(open(&ciphertext, &nonce, &alice.public_key(), &bob.private_key()).is_err());
     }

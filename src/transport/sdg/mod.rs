@@ -10,4 +10,4 @@ mod packet;
 
 pub use identity::{Identity, Key};
 pub use nonce::Nonce;
-pub use packet::{Packet, MAX_FRAME_SIZE, read_frame, write_frame};
+pub use packet::{MAX_FRAME_SIZE, Packet, read_frame, write_frame};

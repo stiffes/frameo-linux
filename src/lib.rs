@@ -35,7 +35,9 @@ impl Default for Unframeo {
 
 impl Unframeo {
     pub fn new(executable: impl Into<OsString>) -> Self {
-        Self { executable: executable.into() }
+        Self {
+            executable: executable.into(),
+        }
     }
 
     pub fn pair(&self, code: &str) -> Result<ExitStatus> {
@@ -87,7 +89,11 @@ fn upload_args(files: &[impl AsRef<Path>], caption: Option<&str>) -> Vec<OsStrin
         args.push(OsString::from(caption));
     }
     args.push(OsString::from("send"));
-    args.extend(files.iter().map(|file| file.as_ref().as_os_str().to_os_string()));
+    args.extend(
+        files
+            .iter()
+            .map(|file| file.as_ref().as_os_str().to_os_string()),
+    );
     args
 }
 
@@ -99,15 +105,30 @@ mod tests {
     fn upload_arguments_include_caption_before_send() {
         let files = ["/tmp/one.jpg", "/tmp/two.jpg"];
         let args = upload_args(&files, Some("Summer holiday"));
-        let args: Vec<_> = args.iter().map(|arg| arg.to_string_lossy().into_owned()).collect();
-        assert_eq!(args, ["-caption", "Summer holiday", "send", "/tmp/one.jpg", "/tmp/two.jpg"]);
+        let args: Vec<_> = args
+            .iter()
+            .map(|arg| arg.to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(
+            args,
+            [
+                "-caption",
+                "Summer holiday",
+                "send",
+                "/tmp/one.jpg",
+                "/tmp/two.jpg"
+            ]
+        );
     }
 
     #[test]
     fn upload_arguments_without_caption() {
         let files = ["/tmp/photo.jpg"];
         let args = upload_args(&files, None);
-        let args: Vec<_> = args.iter().map(|arg| arg.to_string_lossy().into_owned()).collect();
+        let args: Vec<_> = args
+            .iter()
+            .map(|arg| arg.to_string_lossy().into_owned())
+            .collect();
         assert_eq!(args, ["send", "/tmp/photo.jpg"]);
     }
 }
