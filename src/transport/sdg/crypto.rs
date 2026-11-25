@@ -5,7 +5,7 @@
 //! a deterministic HELO packet test against the upstream reference fixture.
 
 use anyhow::{Context, Result};
-use crypto_box::{aead::Aead, Nonce as BoxNonce, PublicKey, SalsaBox, SecretKey};
+use crypto_box::{Nonce as BoxNonce, PublicKey, SalsaBox, SecretKey, aead::Aead};
 
 use super::{Key, Nonce};
 
