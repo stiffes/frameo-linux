@@ -1,0 +1,40 @@
+Frameo Linux -- independent Linux client for Frameo digital photo frames
+Copyright (C) 2026 Frameo Linux contributors
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, version 3 or (at your option) any later version. See LICENSE.
+
+Protocol reference and provenance
+---------------------------------
+
+The native Rust implementation is being developed with reference to:
+
+    unframeo
+    https://github.com/borje/unframeo
+    Audited revision: 149f60b5ac7702f2cbb0761185b0d49a7431bf3f
+    Copyright (C) 2026 Borje Granberg
+    Licensed under GPL-3.0-or-later.
+
+The upstream unframeo project documents its internal/sdg package as a port
+to Go of the opensdg C library:
+
+    https://github.com/Sonic-Amiga/opensdg
+    Copyright (C) Pavel Fedin
+    Licensed under GNU GPL version 3.
+
+The Frameo Linux repository's protocol documentation, compatibility fixtures,
+and any future ported implementation must retain applicable copyright,
+licence and attribution notices. The source revision and upstream file paths
+used for the port are recorded in docs/UPSTREAM_REFERENCE.md.
+
+The opensdg README contains a request that its code not be used commercially.
+The unframeo NOTICE explains that this request is not included in the GPL
+licence text and is passed on as a request, not represented as an additional
+licence condition. This notice preserves that context; it is not legal advice.
+
+Trademarks
+----------
+
+Frameo is a product of Frameo ApS. This independent project is not affiliated
+with, authorised by, or endorsed by Frameo ApS or Trifork.

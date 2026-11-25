@@ -1,6 +1,6 @@
 # Native Rust protocol porting plan
 
-Status: source audit complete; Rust protocol implementation not started.
+Status: Phase 0 complete; Phase 1 implemented; initial Phase 2 wire primitives and NaCl box compatibility tests added. Native network transport and Frameo photo transfer are not implemented.
 
 ## Decision
 
@@ -10,7 +10,9 @@ Do not attempt to translate the whole Go command-line application in one step. P
 
 ## Source audit
 
-Reference implementation: [borje/unframeo](https://github.com/borje/unframeo), default branch `main`.
+Reference implementation: [borje/unframeo](https://github.com/borje/unframeo), pinned revision [149f60b5ac7702f2cbb0761185b0d49a7431bf3f](https://github.com/borje/unframeo/commit/149f60b5ac7702f2cbb0761185b0d49a7431bf3f).
+
+See [UPSTREAM_REFERENCE.md](UPSTREAM_REFERENCE.md) and [NOTICE](../NOTICE) for provenance, source paths and baseline status.
 
 The source is divided into these useful boundaries:
 
@@ -78,48 +80,41 @@ src/
 
 The exact file split can change as the implementation develops, but keep these boundaries: configuration, discovery, secure transport, Frameo application protocol and user interface.
 
-Candidate Rust dependencies to evaluate before locking versions:
+## Implemented work
 
-- `tokio`: async TCP, cancellation and timeouts for concurrent grid/peer operations.
-- `prost` and `prost-build`: protobuf messages and generated Rust bindings.
-- `x25519-dalek` or an equivalent audited X25519 implementation.
-- An audited NaCl-compatible `crypto_box` implementation, plus Salsa20 and SHA-2 crates where needed.
-- `mdns-sd`: DNS-SD/mDNS discovery.
-- `serde` and `serde_json`: configuration serialization.
-- `directories`: XDG-aware configuration paths.
+### Phase 0 -- reference and baseline
 
-These are candidates, not final choices. In particular, do not assume a crate named `crypto_box` is byte-compatible: verify nonce construction, key handling, authenticator placement and ciphertext bytes against the reference vectors before using it. Do not write custom cryptographic primitives.
+- Pinned upstream unframeo commit `149f60b5ac7702f2cbb0761185b0d49a7431bf3f`.
+- Added `docs/UPSTREAM_REFERENCE.md` and `NOTICE` with provenance and GPL attribution.
+- Confirmed the Frameo Linux baseline CI run passed before the implementation commit.
+- Inspected the upstream offline fake-grid, fake-peer and fake-frame tests. The upstream Go suite has not been run as part of this change.
 
-## Implementation phases and acceptance criteria
+### Phase 1 -- configuration and identity
 
-### 0. Preserve the reference and establish a baseline
+- Added Curve25519 identity generation and public-key derivation using `x25519-dalek`.
+- Preserved the upstream `unframeo/config.json` path and JSON field names so existing identity and paired-frame data can be read.
+- Added explicit config path overrides `UNFRAMEO_CONFIG` and `FRAMEO_CONFIG`.
+- Added atomic config writes and owner-only (0600) config files on Unix.
+- Loading a missing config never generates a replacement identity; creation is explicit and intended only for pairing.
+- Added paired-frame validation, default-frame selection, rename-by-peer behavior and removal.
+- Added tests for RFC 7748 X25519 public-key derivation, identity reload, JSON compatibility, invalid keys, duplicate peer records and file permissions.
 
-- Pin the upstream source revision used for each porting milestone.
-- Record upstream file paths and commit IDs in the project's `NOTICE`/porting notes.
-- Run the upstream offline test suite and inspect its reference-vector tests.
-- Keep a small set of non-secret protocol fixtures in this repository. Never commit private keys, pairing codes, real frame identities or captured user data.
-- Confirm the current Rust CLI builds and its CI passes before changing the backend.
+### Initial Phase 2 -- SDG wire primitives
 
-**Exit:** reproducible source baseline, documented provenance and a green Rust baseline.
+- Added bounded 16-bit TCP frame encoding/decoding and SDG packet header parsing.
+- Added exact 24-byte nonce constructors for counter-based and random-tail nonce formats.
+- Added RustCrypto `SalsaBox` wrappers for NaCl-compatible `crypto_box`.
+- Added a deterministic HELO ciphertext compatibility test against the upstream reference fixture.
+- Full session-key precomputation, encrypted MESG/VOCH packets, the handshake state machine and pairing are not implemented yet.
 
-### 1. Configuration and identity
+## Remaining implementation phases
 
-- Implement secure random 32-byte identity generation and public-key derivation.
-- Load/save the identity and paired-frame records using XDG paths and an explicit config override.
-- Write atomically (temporary file, restrictive permissions, rename); reject malformed or truncated key material.
-- Never silently generate a new identity when an existing config is missing or unreadable.
-- Support multiple paired frames and a default frame.
+### 2. Complete SDG cryptographic and packet compatibility
 
-**Exit:** deterministic serialization tests, permission tests, interrupted-write tests and key derivation vectors pass.
-
-### 2. SDG wire primitives and cryptographic compatibility
-
-- Implement bounded 16-bit length-prefixed TCP frames and packet parsing.
-- Implement nonce construction and packet encoders/decoders.
-- Implement NaCl-compatible box operations through audited dependencies.
-- Reproduce HELO/COOK/VOCH/REDY and MESG packets.
-- Add byte-for-byte reference tests for packet layouts, nonce values, encryption/decryption and invalid packets.
-- Enforce packet-size limits before allocating memory; fail closed on authentication errors.
+- Reproduce NaCl `crypto_box_beforenm` byte-for-byte. The pairing protocol reuses this output as a Curve25519 scalar, so merely encrypting/decrypting with `SalsaBox` is insufficient.
+- Implement symmetric `crypto_secretbox` operations for precomputed session keys.
+- Reproduce HELO/COOK/VOCH/REDY and MESG packets and test all fixed reference vectors.
+- Add strict bounds and malformed-packet tests.
 
 **Exit:** Rust produces and consumes the same deterministic packet bytes as the reference implementation. No live network code is needed yet.
 
@@ -197,11 +192,7 @@ A fake server derived from the same assumptions can share the same protocol mist
 The current Frameo Linux repository is GPL-3.0-or-later. The upstream `unframeo` project is GPL-3.0-or-later and documents its SDG package as a port of the GPLv3 `opensdg` C library. A direct translation of that implementation remains subject to its applicable GPL obligations.
 
 - Preserve upstream copyright and licence notices for material ported from `unframeo` and `opensdg`.
-- Keep a project `NOTICE` file documenting upstream URLs, authors, licences and the portions ported.
+- Keep the project `NOTICE` file documenting upstream URLs, authors, licences and the portions ported.
 - Keep the GPL-3.0-or-later licence in this repository and verify all added dependencies' licences.
 - The opensdg README contains a non-commercial request that upstream `unframeo` describes as a request rather than a condition in its GPL licence. Preserve the attribution/context in NOTICE; do not misrepresent it as an additional licence term.
 - This is an engineering checklist, not legal advice. Review the final source provenance and notices before distributing binaries.
-
-## Immediate next implementation task
-
-Start with Phase 0 and Phase 1, then implement the SDG packet/crypto primitives with byte-for-byte tests. Do not start the GTK application or claim native upload support until the transport and Frameo protocol work against a real frame.
