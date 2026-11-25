@@ -25,8 +25,7 @@ pub struct Unframeo {
 impl Default for Unframeo {
     fn default() -> Self {
         Self {
-            executable: env::var_os(BACKEND_ENV)
-                .unwrap_or_else(|| OsString::from("unframeo")),
+            executable: env::var_os(BACKEND_ENV).unwrap_or_else(|| OsString::from("unframeo")),
         }
     }
 }
@@ -121,7 +120,13 @@ mod tests {
 
         assert_eq!(
             args,
-            ["-caption", "Summer holiday", "send", "/tmp/one.jpg", "/tmp/two.jpg"]
+            [
+                "-caption",
+                "Summer holiday",
+                "send",
+                "/tmp/one.jpg",
+                "/tmp/two.jpg"
+            ]
         );
     }
 
