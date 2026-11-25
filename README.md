@@ -83,18 +83,16 @@ File-manager integration is optional:
 
 ## Architecture
 
-```text
- GTK4 application (planned)       CLI (available)
-             |                         |
-             +-----------+-------------+
-                         |
-                 Shared Rust core
-                         |
-                unframeo backend
-                         |
-                   Frameo device
-
- Optional: Nemo action / other file-manager custom actions
+```mermaid
+flowchart LR
+    GTK["GTK4 desktop app<br/>(planned)"] --> CORE["Shared Rust core<br/>(planned)"]
+    NEMO["Nemo action<br/>(planned)"] --> CLI
+    FM["Other file-manager<br/>custom actions"] --> CLI
+    USER["Terminal / scripts"] --> CLI["frameo CLI<br/>(available)"]
+    CLI --> ADAPTER["Rust backend adapter<br/>(available)"]
+    ADAPTER --> UNFRAMEO["unframeo backend"]
+    UNFRAMEO --> FRAME["Frameo photo frame"]
+    CORE -.-> ADAPTER
 ```
 
 The initial backend is a separate process rather than copied or linked protocol code. This keeps the Rust frontend small while relying on an existing implementation of Frameo pairing and transfer. A native Rust backend can be evaluated later.
