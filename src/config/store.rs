@@ -25,7 +25,7 @@ pub struct FrameRecord {
 }
 
 /// Persistent state. The private key is the identity the frame paired with.
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Config {
     pub private_key: String,
@@ -48,18 +48,6 @@ impl std::fmt::Debug for Config {
             .field("frames", &self.frames)
             .field("path", &self.path)
             .finish()
-    }
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            private_key: String::new(),
-            client_name: String::new(),
-            default_frame: String::new(),
-            frames: BTreeMap::new(),
-            path: PathBuf::new(),
-        }
     }
 }
 

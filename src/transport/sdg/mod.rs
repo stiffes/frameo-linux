@@ -3,9 +3,9 @@
 //! This module is deliberately below the application protocol layer. It does
 //! not yet establish network connections or perform pairing.
 
-mod crypto;
+pub mod crypto;
 mod identity;
-mod nonce;
+pub mod nonce;
 mod packet;
 
 pub use identity::{Identity, Key};

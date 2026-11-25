@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use rand::rngs::OsRng;
 use x25519_dalek::{PublicKey, StaticSecret};
 
