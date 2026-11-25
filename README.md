@@ -4,7 +4,7 @@ Frameo Linux is an open-source Linux client for sending photos to Frameo digital
 
 The CLI is the first working interface. It does not require GTK or a running desktop session, so it can also be called from shell scripts and file-manager custom actions.
 
-> **Status: early development.** The current CLI uses the existing [unframeo](https://github.com/borje/unframeo) executable as a temporary protocol backend. The project direction is a native Rust implementation; `unframeo` will be a development reference, not a runtime dependency. See the [native Rust protocol porting plan](docs/PORTING_PLAN.md). GTK, Nemo integration and Flatpak packaging are also not implemented yet.
+> **Status: early development.** The current CLI uses the existing [unframeo](https://github.com/borje/unframeo) executable as a temporary protocol backend. The project direction is a native Rust implementation; `unframeo` will be a development reference, not a runtime dependency. See the [native Rust protocol porting plan](docs/PORTING_PLAN.md). GTK and Nemo integration are not implemented yet. Experimental [Flatpak packaging](packaging/flatpak/README.md) is available for the CLI.
 
 ## Current CLI
 
@@ -65,6 +65,10 @@ If the backend executable is not named `unframeo` or is not in `PATH`, set its p
 export FRAMEO_UNFRAMEO_BIN=/path/to/unframeo
 ```
 
+### 3. Flatpak development bundle
+
+See the [Flatpak build and installation instructions](packaging/flatpak/README.md). The experimental bundle includes the temporary backend and is built by the [Flatpak workflow](https://github.com/stiffes/frameo-linux/actions/workflows/flatpak.yml).
+
 ## Interfaces and desktop support
 
 ### CLI
@@ -124,7 +128,7 @@ GitHub Actions runs these checks on pushes to `main` and pull requests.
 | Shared GUI/CLI upload queue | Planned |
 | Nemo context-menu action | Planned |
 | Generic file-manager integration | CLI can already be called |
-| Flatpak packaging | Planned |
+| Flatpak packaging | Experimental CLI build and CI workflow; device testing pending |
 
 ## Contributing
 

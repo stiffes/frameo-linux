@@ -1,0 +1,6 @@
+/stage/
+/.unframeo/
+/.flatpak-builder/
+/build-dir/
+/repo/
+/*.flatpak

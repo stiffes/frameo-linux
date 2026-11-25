@@ -1,0 +1,22 @@
+app-id: io.github.stiffes.Framebridge
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+command: framebridge
+finish-args:
+  - --share=network
+  - --filesystem=xdg-pictures:ro
+modules:
+  - name: framebridge
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 frameo /app/bin/frameo
+      - ln -s frameo /app/bin/framebridge
+      - install -Dm755 unframeo /app/bin/unframeo
+      - install -Dm644 LICENSE /app/share/licenses/framebridge/LICENSE
+      - install -Dm644 NOTICE /app/share/licenses/framebridge/NOTICE
+      - install -Dm644 unframeo-LICENSE /app/share/licenses/unframeo/LICENSE
+      - install -Dm644 unframeo-NOTICE /app/share/licenses/unframeo/NOTICE
+    sources:
+      - type: dir
+        path: stage
