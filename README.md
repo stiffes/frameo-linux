@@ -1,70 +1,113 @@
 # Frameo Linux
 
-A native Linux desktop application for sending photos (and, where supported by the Frameo device and transfer backend, videos) to Frameo digital photo frames.
+Frameo Linux is an open-source Linux application for sending photos to Frameo digital photo frames. The project is intended to provide both a command-line interface (CLI) and an optional GTK desktop application.
 
-The goal is to make sending pictures from Linux Mint Cinnamon straightforward in two ways:
+The aim is to make Frameo uploads available from **any Linux desktop**, whether you prefer a terminal, a graphical application, a script, or a file manager's context menu.
 
-- **Standalone GTK application:** open Frameo Linux from the desktop menu, select images, add a caption and upload them.
-- **Nemo integration:** select one or more files in the Nemo file manager, right-click and choose **Upload to Frameo**.
+> **Project status: early development.** This repository currently contains the project starting point. The CLI, GTK application, Frameo pairing and transfer workflow, file-manager integrations and Flatpak package are planned; they are not yet implemented or ready for everyday use.
 
-> **Project status: early development.** This repository currently contains the project starting point. The GTK application, Frameo pairing and transfer workflow, Nemo action and Flatpak package are planned; they should not yet be considered implemented or ready for everyday use.
+## Interfaces
 
-## Goals
+### Command-line interface
 
-- Native Linux desktop experience, written in Rust.
-- GTK4 user interface, with libadwaita where appropriate.
-- One shared upload implementation used by both the GUI and Nemo entry point.
-- Multiple image selection, optional captions and visible upload progress.
-- Frame pairing and secure storage of pairing credentials.
-- Nemo right-click integration for Linux Mint Cinnamon.
-- Flatpak packaging, with a path towards Flathub distribution.
-- Automated builds and tests through GitHub Actions.
+The CLI is a first-class interface and should work independently of any desktop environment or GTK installation. It will be suitable for terminal use, shell scripts, automation and integration with file managers.
+
+The intended command style is:
+
+```bash
+# Upload one or more photos
+frameo upload photo.jpg another-photo.jpg
+
+# Upload photos with a caption
+frameo upload --caption "Holiday 2026" ~/Pictures/*.jpg
+
+# Pair with a Frameo device
+frameo pair
+```
+
+These examples illustrate the planned interface; exact command syntax will be documented when the CLI is implemented.
+
+### GTK desktop application
+
+The graphical application will use GTK4, with libadwaita where appropriate. It is intended for Linux distributions and desktop environments that provide a compatible GTK4 runtime. It is not intended to be limited to Linux Mint or Cinnamon.
+
+The GUI and CLI will use the same shared upload and pairing core, so protocol behavior and configuration remain consistent.
+
+### File-manager integration
+
+File-manager context-menu integration is optional and separate from the core application.
+
+- **Nemo:** a Nemo action will provide an "Upload to Frameo" right-click entry.
+- **Other file managers:** users should be able to configure a custom action that invokes the CLI with the selected file paths. This can be supported without writing a dedicated plugin for every file manager.
+- **Terminal and scripts:** invoke the CLI directly.
+
+The Nemo action is specific to Nemo; it is not a limitation of the GTK application or CLI.
 
 ## Planned architecture
 
 ```text
-GTK desktop application          Nemo right-click action
-          |                                |
-          +---------------+----------------+
-                          |
-                   Shared Rust core
-                          |
-              Frameo pairing and transfer
-                          |
-                 Local network / relay
-                          |
-                    Frameo frame
+       GTK desktop application       Terminal / scripts
+                    |                       |
+                    +-----------+-----------+
+                                |
+                         Shared Rust core
+                                |
+                      Frameo pairing / upload
+                                |
+                           Frameo device
+
+       Optional integrations:
+       Nemo action | Other file-manager custom actions
 ```
 
-The Nemo integration will be installed on the host because Flatpak applications cannot directly install files into the host Nemo configuration. The Flatpak will receive selected files through the document portal/file-forwarding mechanism.
+The shared core will handle pairing, configuration, upload requests and transfer behavior. The CLI should remain usable on headless systems and should not require GTK libraries.
+
+For Flatpak installations, host file-manager actions will need a host-side integration that passes selected files to the sandbox using the document portal/file-forwarding mechanism. The CLI may also be installed natively for users who prefer direct shell integration.
 
 ## Frameo protocol
 
-The project will first evaluate existing open-source Frameo implementations, including [unframeo](https://github.com/borje/unframeo), to understand pairing, device discovery and transfer behavior. The initial implementation may call the existing command-line tool from the Rust application. A native Rust protocol implementation can be considered after the protocol and its edge cases are understood.
+The project will evaluate existing open-source Frameo implementations, including [unframeo](https://github.com/borje/unframeo), to understand pairing, device discovery and transfer behavior. The initial implementation may use the existing command-line tool as a backend. A native Rust implementation can be considered after the protocol and its edge cases are understood.
 
 No compatibility with every Frameo device or transfer method is claimed at this stage.
+
+## Goals
+
+- Rust implementation with a reusable, desktop-independent core.
+- A CLI that does not depend on GTK or a running desktop session.
+- GTK4 graphical application for GTK-capable Linux desktops.
+- Shared pairing, configuration and upload behavior across interfaces.
+- Multiple image selection, optional captions and upload progress.
+- Secure storage of pairing credentials.
+- Optional Nemo action and documentation for custom actions in other file managers.
+- Flatpak packaging for the graphical application.
+- Automated builds and tests through GitHub Actions.
 
 ## Development status
 
 | Component | Status |
 | --- | --- |
 | Rust project foundation | Planned |
-| GTK4 / libadwaita interface | Planned |
+| Shared upload core | Planned |
+| Command-line interface | Planned |
+| GTK4 application | Planned |
 | Frame pairing | Under investigation |
 | Photo upload | Planned |
 | Video upload | To be evaluated |
 | Captions and upload queue | Planned |
 | Nemo context-menu action | Planned |
+| Generic file-manager CLI integration | Planned |
 | Flatpak packaging | Planned |
 | Flathub publication | Future goal |
 
 ## Intended platform
 
-The initial target is **Linux Mint Cinnamon**, using GTK4 and the Nemo file manager. Other GTK-based Linux desktops may be supported later.
+The project targets Linux. The CLI should work across Linux distributions without requiring a graphical environment. The GTK application targets desktops with GTK4 support, including GNOME and Cinnamon; compatibility with other GTK4-capable environments will be tested as development progresses.
+
+Nemo integration is specifically for the Nemo file manager. Other file managers can use the CLI through their own custom-action mechanisms.
 
 ## Development
 
-The build dependencies and exact Rust toolchain requirements will be documented here as the project takes shape.
+The build dependencies and exact Rust toolchain requirements will be documented as the project takes shape.
 
 The intended development workflow will use Cargo:
 
@@ -78,7 +121,7 @@ These commands will become usable once the initial application source and Cargo 
 
 ## Contributing
 
-Issues, bug reports and contributions will be welcome as the project becomes functional. Please include your Linux distribution/version, desktop environment, Frameo device model and relevant application logs when reporting a problem. Do not include pairing secrets or private credentials in bug reports.
+Issues, bug reports and contributions will be welcome as the project becomes functional. Please include your Linux distribution/version, desktop environment (if applicable), Frameo device model and relevant application logs when reporting a problem. Do not include pairing secrets or private credentials in bug reports.
 
 ## Disclaimer
 
