@@ -7,7 +7,34 @@
 use anyhow::{Context, Result};
 use crypto_box::{Nonce as BoxNonce, PublicKey, SalsaBox, SecretKey, aead::Aead};
 
+use crypto_secretbox::{KeyInit, XSalsa20Poly1305};
+use salsa20::{cipher::consts::U10, hsalsa};
+use x25519_dalek::{PublicKey as XPublicKey, StaticSecret};
+
 use super::{Key, Nonce};
+
+/// Derive the NaCl precomputed key, rejecting non-contributory peer keys.
+pub fn precompute(peer_public: &Key, private: &Key) -> Result<[u8; 32]> {
+    let dh = StaticSecret::from(*private.as_bytes())
+        .diffie_hellman(&XPublicKey::from(*peer_public.as_bytes()));
+    anyhow::ensure!(dh.was_contributory(), "invalid SDG peer public key");
+    Ok(hsalsa::<U10>(dh.as_bytes().into(), (&[0u8; 16]).into()).into())
+}
+
+/// Encrypt using a precomputed NaCl session key.
+pub fn seal_shared(plaintext: &[u8], nonce: &Nonce, shared: &[u8; 32]) -> Result<Vec<u8>> {
+    XSalsa20Poly1305::new(shared.into())
+        .encrypt(nonce.as_bytes().into(), plaintext)
+        .context("SDG secretbox encryption failed")
+}
+
+/// Authenticate before returning any plaintext.
+pub fn open_shared(ciphertext: &[u8], nonce: &Nonce, shared: &[u8; 32]) -> Result<Vec<u8>> {
+    XSalsa20Poly1305::new(shared.into())
+        .decrypt(nonce.as_bytes().into(), ciphertext)
+        .context("SDG secretbox authentication failed")
+}
+
 
 /// Encrypt with NaCl crypto_box semantics (16-byte authenticator + ciphertext).
 pub fn seal(
@@ -91,6 +118,26 @@ mod tests {
             .unwrap(),
             vec![0; 64]
         );
+    }
+
+    #[test]
+    fn precomputed_key_matches_pinned_reference() {
+        let client = Identity::from_private_key(Key::from_bytes(core::array::from_fn(|i| {
+            0x50 + i as u8
+        })));
+        let server = Identity::from_private_key(Key::from_bytes(core::array::from_fn(|i| {
+            0x80 + i as u8
+        })));
+        let shared = precompute(&server.public_key(), &client.private_key()).unwrap();
+        assert_eq!(
+            hex(&shared),
+            "e6c55502fce47eaddcf296ef4219ed87eba5692dc84bedf702ea8915ba744d30"
+        );
+        assert_eq!(
+            shared,
+            precompute(&client.public_key(), &server.private_key()).unwrap()
+        );
+        assert!(precompute(&Key::from_bytes([0; 32]), &client.private_key()).is_err());
     }
 
     #[test]

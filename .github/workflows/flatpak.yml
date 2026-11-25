@@ -1,9 +1,6 @@
 name: Flatpak
 
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -11,6 +8,8 @@ permissions:
 
 jobs:
   flatpak:
+    # Historical backend-dependent build disabled pending native transport.
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:

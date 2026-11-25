@@ -105,7 +105,7 @@ The exact file split can change as the implementation develops, but keep these b
 - Added exact 24-byte nonce constructors for counter-based and random-tail nonce formats.
 - Added RustCrypto `SalsaBox` wrappers for NaCl-compatible `crypto_box`.
 - Added a deterministic HELO ciphertext compatibility test against the upstream reference fixture.
-- Full session-key precomputation, encrypted MESG/VOCH packets, the handshake state machine and pairing are not implemented yet.
+- Added native NaCl session-key precomputation, secretbox operations and encrypted MESG encoding/decoding with pinned reference vectors. VOCH, the handshake state machine and pairing remain unimplemented.
 
 ## Remaining implementation phases
 
