@@ -147,9 +147,7 @@ impl<T: MessageTransport> Client<T> {
             "photo exceeds Frameo 32-bit file length"
         );
         let extension = extension.trim_start_matches('.').to_ascii_lowercase();
-        let extension = if extension.is_empty() {
-            "jpg"
-        } else if extension == "jpeg" {
+        let extension = if extension.is_empty() || extension == "jpeg" {
             "jpg"
         } else {
             &extension
