@@ -53,7 +53,10 @@ impl Frame {
     }
 
     pub fn from_protobuf<T: Message>(kind: i32, message: &T) -> Self {
-        Self { kind, payload: message.encode_to_vec() }
+        Self {
+            kind,
+            payload: message.encode_to_vec(),
+        }
     }
 
     pub fn protobuf<T: Message + Default>(&self) -> Result<T> {
@@ -67,11 +70,20 @@ mod tests {
 
     #[test]
     fn header_matches_upstream_frameo_envelope() {
-        assert_eq!(Frame { kind: TYPE_GET_INFO, payload: vec![] }.encode(),
-            [0,0,0,18,0,0,0,1]);
-        let input = Frame { kind: TYPE_MEDIA, payload: vec![1,2,3] };
+        assert_eq!(
+            Frame {
+                kind: TYPE_GET_INFO,
+                payload: vec![]
+            }
+            .encode(),
+            [0, 0, 0, 18, 0, 0, 0, 1]
+        );
+        let input = Frame {
+            kind: TYPE_MEDIA,
+            payload: vec![1, 2, 3],
+        };
         assert_eq!(Frame::decode(&input.encode()).unwrap(), input);
-        assert!(Frame::decode(&[0;7]).is_err());
-        assert!(Frame::decode(&[0;8]).is_err());
+        assert!(Frame::decode(&[0; 7]).is_err());
+        assert!(Frame::decode(&[0; 8]).is_err());
     }
 }
