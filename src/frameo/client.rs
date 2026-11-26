@@ -18,8 +18,8 @@ use super::{
     multipart::{Reassembler, split_frame},
     proto::{AcknowledgeReceipt, ClientInfo, FrameInfo, GetInfo, Media, MediaDataSegment},
     wire::{
-        Frame, TYPE_ACKNOWLEDGE_RECEIPT, TYPE_CLIENT_INFO, TYPE_FRAME_INFO,
-        TYPE_GET_INFO, TYPE_MEDIA, TYPE_MEDIA_DATA_SEGMENT,
+        Frame, TYPE_ACKNOWLEDGE_RECEIPT, TYPE_CLIENT_INFO, TYPE_FRAME_INFO, TYPE_GET_INFO,
+        TYPE_MEDIA, TYPE_MEDIA_DATA_SEGMENT,
     },
 };
 use crate::transport::sdg::handshake::EstablishedTunnel;
@@ -34,8 +34,12 @@ pub trait MessageTransport {
 }
 
 impl<S: Read + Write> MessageTransport for EstablishedTunnel<S> {
-    fn send_message(&mut self, data: &[u8]) -> Result<()> { self.send(data) }
-    fn receive_message(&mut self) -> Result<Vec<u8>> { self.receive() }
+    fn send_message(&mut self, data: &[u8]) -> Result<()> {
+        self.send(data)
+    }
+    fn receive_message(&mut self) -> Result<Vec<u8>> {
+        self.receive()
+    }
 }
 
 pub struct Client<T> {
@@ -52,18 +56,31 @@ impl<T: MessageTransport> Client<T> {
             .unwrap_or_default()
             .as_millis()
             .min(i64::MAX as u128) as i64;
-        Self { transport, name: name.into(), next_id: millis, reassembler: Reassembler::new() }
+        Self {
+            transport,
+            name: name.into(),
+            next_id: millis,
+            reassembler: Reassembler::new(),
+        }
     }
 
     fn next_id(&mut self) -> Result<i64> {
-        self.next_id = self.next_id.checked_add(1).context("Frameo message ID exhausted")?;
+        self.next_id = self
+            .next_id
+            .checked_add(1)
+            .context("Frameo message ID exhausted")?;
         Ok(self.next_id)
     }
 
-    pub fn into_inner(self) -> T { self.transport }
+    pub fn into_inner(self) -> T {
+        self.transport
+    }
 
     pub fn send_frame(&mut self, kind: i32, payload: &[u8]) -> Result<()> {
-        let frame = Frame { kind, payload: payload.to_vec() };
+        let frame = Frame {
+            kind,
+            payload: payload.to_vec(),
+        };
         let message_id = self.next_id()?;
         for packet in split_frame(&frame, message_id)? {
             self.transport.send_message(&packet)?;
@@ -83,10 +100,14 @@ impl<T: MessageTransport> Client<T> {
                 continue;
             };
             if frame.kind == TYPE_GET_INFO && !self.name.is_empty() {
-                self.send_proto(TYPE_CLIENT_INFO, &ClientInfo {
-                    name: self.name.clone(), user_account_id: String::new(),
-                    profile_picture_id: 0,
-                })?;
+                self.send_proto(
+                    TYPE_CLIENT_INFO,
+                    &ClientInfo {
+                        name: self.name.clone(),
+                        user_account_id: String::new(),
+                        profile_picture_id: 0,
+                    },
+                )?;
                 continue;
             }
             return Ok(frame);
@@ -103,18 +124,36 @@ impl<T: MessageTransport> Client<T> {
     fn await_type(&mut self, kind: i32, label: &str) -> Result<Frame> {
         for _ in 0..MAX_UNRELATED_REPLIES {
             let frame = self.receive_frame()?;
-            if frame.kind == kind { return Ok(frame); }
+            if frame.kind == kind {
+                return Ok(frame);
+            }
         }
         anyhow::bail!("Frameo did not send {label}");
     }
 
     /// Upload a photo using the Frameo Media/MediaDataSegment/AcknowledgeReceipt
     /// sequence. Caller must configure an I/O timeout on the underlying socket.
-    pub fn send_photo(&mut self, data: &[u8], extension: &str, caption: &str, captured_ms: i64, fit: bool) -> Result<i64> {
+    pub fn send_photo(
+        &mut self,
+        data: &[u8],
+        extension: &str,
+        caption: &str,
+        captured_ms: i64,
+        fit: bool,
+    ) -> Result<i64> {
         ensure!(!data.is_empty(), "photo is empty");
-        ensure!(data.len() <= i32::MAX as usize, "photo exceeds Frameo 32-bit file length");
+        ensure!(
+            data.len() <= i32::MAX as usize,
+            "photo exceeds Frameo 32-bit file length"
+        );
         let extension = extension.trim_start_matches('.').to_ascii_lowercase();
-        let extension = if extension.is_empty() { "jpg" } else if extension == "jpeg" { "jpg" } else { &extension };
+        let extension = if extension.is_empty() {
+            "jpg"
+        } else if extension == "jpeg" {
+            "jpg"
+        } else {
+            &extension
+        };
         let id = self.next_id()?;
         let ack_id = self.next_id()?;
         let media = Media {
@@ -134,18 +173,29 @@ impl<T: MessageTransport> Client<T> {
         self.send_proto(TYPE_MEDIA, &media)?;
         let count = data.len().div_ceil(PHOTO_SEGMENT_SIZE);
         for (index, piece) in data.chunks(PHOTO_SEGMENT_SIZE).enumerate() {
-            self.send_proto(TYPE_MEDIA_DATA_SEGMENT, &MediaDataSegment {
-                data: piece.to_vec(),
-                requires_acknowledge_receipt_id: if index + 1 == count { ack_id } else { 0 },
-            })?;
+            self.send_proto(
+                TYPE_MEDIA_DATA_SEGMENT,
+                &MediaDataSegment {
+                    data: piece.to_vec(),
+                    requires_acknowledge_receipt_id: if index + 1 == count { ack_id } else { 0 },
+                },
+            )?;
         }
         for _ in 0..MAX_UNRELATED_REPLIES {
             let frame = self.receive_frame()?;
-            if frame.kind != TYPE_ACKNOWLEDGE_RECEIPT { continue; }
+            if frame.kind != TYPE_ACKNOWLEDGE_RECEIPT {
+                continue;
+            }
             let ack = AcknowledgeReceipt::decode(frame.payload.as_slice())?;
-            if ack.acknowledge_id != ack_id { continue; }
+            if ack.acknowledge_id != ack_id {
+                continue;
+            }
             if let Some(error) = ack.error {
-                ensure!(error.code == 0, "Frameo rejected photo (error {})", error.code);
+                ensure!(
+                    error.code == 0,
+                    "Frameo rejected photo (error {})",
+                    error.code
+                );
             }
             return Ok(id);
         }
@@ -156,8 +206,12 @@ impl<T: MessageTransport> Client<T> {
     pub fn send_photo_file(&mut self, path: &Path, caption: &str, fit: bool) -> Result<i64> {
         let data = fs::read(path).with_context(|| format!("read photo {}", path.display()))?;
         let metadata = fs::metadata(path)?;
-        let captured_ms = metadata.modified().unwrap_or_else(|_| SystemTime::now())
-            .duration_since(UNIX_EPOCH).unwrap_or_default().as_millis()
+        let captured_ms = metadata
+            .modified()
+            .unwrap_or_else(|_| SystemTime::now())
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis()
             .min(i64::MAX as u128) as i64;
         let extension = path.extension().and_then(|s| s.to_str()).unwrap_or("jpg");
         self.send_photo(&data, extension, caption, captured_ms, fit)
@@ -166,8 +220,8 @@ impl<T: MessageTransport> Client<T> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::VecDeque;
     use super::*;
+    use std::collections::VecDeque;
 
     #[derive(Default)]
     struct FakeTransport {
@@ -188,13 +242,24 @@ mod tests {
 
     #[test]
     fn sends_header_and_photo_segments_then_waits_for_ack() {
-        let intro = Frame::from_protobuf(TYPE_GET_INFO, &GetInfo{}).encode();
-        let ack = Frame::from_protobuf(TYPE_ACKNOWLEDGE_RECEIPT,
-            &AcknowledgeReceipt { acknowledge_id: 102, error: None }).encode();
-        let fake = FakeTransport { sent: vec![], replies: VecDeque::from([intro, ack]) };
+        let intro = Frame::from_protobuf(TYPE_GET_INFO, &GetInfo {}).encode();
+        let ack = Frame::from_protobuf(
+            TYPE_ACKNOWLEDGE_RECEIPT,
+            &AcknowledgeReceipt {
+                acknowledge_id: 102,
+                error: None,
+            },
+        )
+        .encode();
+        let fake = FakeTransport {
+            sent: vec![],
+            replies: VecDeque::from([intro, ack]),
+        };
         let mut client = Client::new(fake, "Framebridge");
         client.next_id = 100;
-        let id = client.send_photo(&vec![0x7e;32_001], "jpeg", "Hello", 123456, true).unwrap();
+        let id = client
+            .send_photo(&vec![0x7e; 32_001], "jpeg", "Hello", 123456, true)
+            .unwrap();
         assert_eq!(id, 101);
         let sent = client.into_inner().sent;
         let decoded: Vec<Frame> = sent.iter().map(|v| Frame::decode(v).unwrap()).collect();
@@ -204,11 +269,19 @@ mod tests {
         assert_eq!(media.file_extension, "jpg");
         assert_eq!(media.scale_type, 1);
         assert_eq!(media.caption, "Hello");
-        assert_eq!(decoded.iter().filter(|f| f.kind == TYPE_MEDIA_DATA_SEGMENT).count(), 3);
+        assert_eq!(
+            decoded
+                .iter()
+                .filter(|f| f.kind == TYPE_MEDIA_DATA_SEGMENT)
+                .count(),
+            3
+        );
         assert_eq!(decoded.last().unwrap().kind, TYPE_CLIENT_INFO);
-        let chunks: Vec<MediaDataSegment> = decoded.iter()
+        let chunks: Vec<MediaDataSegment> = decoded
+            .iter()
             .filter(|f| f.kind == TYPE_MEDIA_DATA_SEGMENT)
-            .map(|f| f.protobuf().unwrap()).collect();
+            .map(|f| f.protobuf().unwrap())
+            .collect();
         assert_eq!(chunks[0].data.len(), PHOTO_SEGMENT_SIZE);
         assert_eq!(chunks[1].data.len(), PHOTO_SEGMENT_SIZE);
         assert_eq!(chunks[2].data.len(), 1);
@@ -217,12 +290,21 @@ mod tests {
 
     #[test]
     fn rejects_error_ack_and_empty_photo() {
-        let ack = Frame::from_protobuf(TYPE_ACKNOWLEDGE_RECEIPT,
+        let ack = Frame::from_protobuf(
+            TYPE_ACKNOWLEDGE_RECEIPT,
             &AcknowledgeReceipt {
                 acknowledge_id: 102,
-                error: Some(super::super::proto::FrameError { code: 5, additional_int: 0 })
-            }).encode();
-        let fake = FakeTransport { sent: vec![], replies: VecDeque::from([ack]) };
+                error: Some(super::super::proto::FrameError {
+                    code: 5,
+                    additional_int: 0,
+                }),
+            },
+        )
+        .encode();
+        let fake = FakeTransport {
+            sent: vec![],
+            replies: VecDeque::from([ack]),
+        };
         let mut client = Client::new(fake, "");
         client.next_id = 100;
         assert!(client.send_photo(&[], "jpg", "", 0, false).is_err());
