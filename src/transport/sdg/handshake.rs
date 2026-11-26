@@ -35,8 +35,10 @@ pub enum HandshakeMode {
 #[derive(Debug)]
 pub struct EstablishedTunnel<S> {
     stream: S,
-    shared: [u8; 32],
+    pub(super) shared: [u8; 32],
     server_identity: Key,
+    pub(super) client_identity: Key,
+    pub(super) pairing_mode: bool,
     next_send_counter: u64,
     last_received_counter: Option<u64>,
 }
@@ -131,6 +133,7 @@ pub fn handshake<S: Read + Write>(
     let cookie = &decrypted[32..];
     let shared = crypto::precompute(&remote_ephemeral, &ephemeral.private_key())?;
 
+    let pairing_mode = matches!(mode, HandshakeMode::Pairing);
     let properties = match mode {
         HandshakeMode::Grid { certificate } => {
             let mut padded = [0u8; 128];
@@ -172,6 +175,8 @@ pub fn handshake<S: Read + Write>(
         stream,
         shared,
         server_identity: remote,
+        client_identity: identity.public_key(),
+        pairing_mode,
         next_send_counter: 2,
         last_received_counter: None,
     })
