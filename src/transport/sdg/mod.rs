@@ -6,6 +6,7 @@
 pub mod crypto;
 pub mod handshake;
 mod identity;
+pub mod local;
 pub mod message;
 pub mod nonce;
 mod packet;
