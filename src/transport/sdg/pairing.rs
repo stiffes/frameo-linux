@@ -76,9 +76,11 @@ pub fn pairing_proof(
     let pivot = StaticSecret::from(unmasked).diffie_hellman(&base);
     ensure!(pivot.was_contributory(), "invalid pairing pivot");
     let response_x = StaticSecret::from(*random).diffie_hellman(&PublicKey::from(pivot.to_bytes()));
-    ensure!(response_x.was_contributory(), "invalid pairing response point");
-    let secret = StaticSecret::from(*random)
-        .diffie_hellman(&PublicKey::from(challenge.x));
+    ensure!(
+        response_x.was_contributory(),
+        "invalid pairing response point"
+    );
+    let secret = StaticSecret::from(*random).diffie_hellman(&PublicKey::from(challenge.x));
     ensure!(secret.was_contributory(), "invalid pairing challenge point");
 
     let hash_point = |point: &[u8; 32]| -> [u8; 32] {
@@ -95,7 +97,10 @@ pub fn pairing_proof(
     response[0] = RESPONSE;
     response[1..33].copy_from_slice(response_x.as_bytes());
     response[33..].copy_from_slice(&y);
-    Ok(PairingProof { response, expected_result })
+    Ok(PairingProof {
+        response,
+        expected_result,
+    })
 }
 
 /// Finish a pairing handshake on a previously established pairing tunnel.
@@ -105,20 +110,39 @@ pub fn run_pairing<S: std::io::Read + std::io::Write>(
     identity: &Identity,
     otp: &str,
 ) -> Result<()> {
-    ensure!(tunnel.pairing_mode, "pairing requires a pairing-mode SDG tunnel");
-    ensure!(tunnel.client_identity == identity.public_key(), "pairing identity mismatch");
-    ensure!(!otp.is_empty() && otp.bytes().all(|c| c.is_ascii_digit()), "invalid pairing code");
+    ensure!(
+        tunnel.pairing_mode,
+        "pairing requires a pairing-mode SDG tunnel"
+    );
+    ensure!(
+        tunnel.client_identity == identity.public_key(),
+        "pairing identity mismatch"
+    );
+    ensure!(
+        !otp.is_empty() && otp.bytes().all(|c| c.is_ascii_digit()),
+        "invalid pairing code"
+    );
     let challenge = PairingChallenge::decode(&tunnel.receive()?)?;
     let mut random = [0u8; 32];
     OsRng.fill_bytes(&mut random);
     let proof = pairing_proof(
-        otp, identity.public_key(), tunnel.server_identity(),
-        &tunnel.shared, &challenge, &random,
+        otp,
+        identity.public_key(),
+        tunnel.server_identity(),
+        &tunnel.shared,
+        &challenge,
+        &random,
     )?;
     tunnel.send(&proof.response)?;
     let reply = tunnel.receive()?;
-    ensure!(reply.len() == 33 && reply[0] == RESULT, "invalid SDG pairing result");
-    ensure!(bool::from(reply[1..].ct_eq(&proof.expected_result)), "SDG pairing rejected");
+    ensure!(
+        reply.len() == 33 && reply[0] == RESULT,
+        "invalid SDG pairing result"
+    );
+    ensure!(
+        bool::from(reply[1..].ct_eq(&proof.expected_result)),
+        "SDG pairing rejected"
+    );
     Ok(())
 }
 
@@ -130,7 +154,9 @@ mod tests {
     fn pairing_matches_opensdg_reference_vector() {
         let challenge = PairingChallenge {
             x: hex::decode("358072d6365880d1aeea329adf9121383851ed21a28e3b75e965d0d2cd166254")
-                .unwrap().try_into().unwrap(),
+                .unwrap()
+                .try_into()
+                .unwrap(),
             nonce: core::array::from_fn(|i| 0x40 + i as u8),
             y: core::array::from_fn(|i| 0x70 + i as u8),
         };
@@ -138,7 +164,8 @@ mod tests {
         let server = Key::from_bytes(core::array::from_fn(|i| 0xa0 + i as u8));
         let shared = core::array::from_fn(|i| 0x10 + i as u8);
         let random = core::array::from_fn(|i| 0xc0 + i as u8);
-        let proof = pairing_proof("12345678", client, server, &shared, &challenge, &random).unwrap();
+        let proof =
+            pairing_proof("12345678", client, server, &shared, &challenge, &random).unwrap();
         assert_eq!(
             hex::encode(&proof.response[1..33]),
             "eff3f1b06110e23bc2858f1db21b409aa90866a9260cbc4fd186a4ce62cf1e5b"
@@ -155,7 +182,7 @@ mod tests {
 
     #[test]
     fn rejects_wrong_challenge_size_and_type() {
-        assert!(PairingChallenge::decode(&[3;96]).is_err());
-        assert!(PairingChallenge::decode(&[0;97]).is_err());
+        assert!(PairingChallenge::decode(&[3; 96]).is_err());
+        assert!(PairingChallenge::decode(&[0; 97]).is_err());
     }
 }
