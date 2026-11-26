@@ -3,7 +3,7 @@ use std::{net::SocketAddr, path::PathBuf, process::ExitCode, time::Duration};
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use frameo_linux::{
-    Unframeo, config::store::Config, frameo::client::Client, transport::sdg::local::dial_local,
+    Unframeo, config::Config, frameo::client::Client, transport::sdg::local::dial_local,
 };
 
 #[derive(Debug, Parser)]
