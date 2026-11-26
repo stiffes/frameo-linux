@@ -5,6 +5,7 @@
 //! shared by the CLI and the future GTK application.
 
 pub mod config;
+pub mod frameo;
 pub mod transport;
 
 // Temporary compatibility adapter. It will be removed when native pairing
