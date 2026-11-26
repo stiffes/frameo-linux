@@ -1,17 +1,9 @@
-use std::{
-    net::SocketAddr,
-    path::PathBuf,
-    process::ExitCode,
-    time::Duration,
-};
+use std::{net::SocketAddr, path::PathBuf, process::ExitCode, time::Duration};
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use frameo_linux::{
-    Unframeo,
-    config::store::Config,
-    frameo::client::Client,
-    transport::sdg::local::dial_local,
+    Unframeo, config::store::Config, frameo::client::Client, transport::sdg::local::dial_local,
 };
 
 #[derive(Debug, Parser)]
@@ -96,10 +88,12 @@ fn main() -> Result<ExitCode> {
             &identity,
             peer,
             Duration::from_secs(*timeout_seconds),
-        ).context("native local connection failed; verify the frame address and pairing")?;
+        )
+        .context("native local connection failed; verify the frame address and pairing")?;
         let mut client = Client::new(stream, stored.client_name);
         for file in files {
-            let media_id = client.send_photo_file(file, caption, *fit)
+            let media_id = client
+                .send_photo_file(file, caption, *fit)
                 .with_context(|| format!("native upload {}", file.display()))?;
             println!("Sent {} (media ID {})", file.display(), media_id);
         }
