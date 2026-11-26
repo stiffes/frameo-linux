@@ -237,6 +237,7 @@ mod tests {
             &Packet::new(*b"WELC", remote.public_key().as_bytes().to_vec()).encode_body(),
         )
         .unwrap();
+        #[derive(Debug)]
         struct Duplex {
             input: Cursor<Vec<u8>>,
             output: Vec<u8>,
@@ -279,6 +280,7 @@ mod tests {
     fn reject_short_welc() {
         let mut wire = Vec::new();
         write_frame(&mut wire, &Packet::new(*b"WELC", vec![0; 31]).encode_body()).unwrap();
+        #[derive(Debug)]
         struct Duplex(Cursor<Vec<u8>>);
         impl Read for Duplex {
             fn read(&mut self, b: &mut [u8]) -> std::io::Result<usize> {
