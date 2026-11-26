@@ -4,6 +4,7 @@
 //! not yet establish network connections or perform pairing.
 
 pub mod crypto;
+pub mod handshake;
 mod identity;
 pub mod message;
 pub mod nonce;
