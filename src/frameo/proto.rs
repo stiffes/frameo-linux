@@ -134,7 +134,11 @@ mod tests {
             profile_picture_id: 0,
         };
         assert_eq!(&client.encode_to_vec()[..2], &[0x0a, 0x0b]);
-        let get = GetMedia { media_id: 111, width: 0, height: 0 };
+        let get = GetMedia {
+            media_id: 111,
+            width: 0,
+            height: 0,
+        };
         assert_eq!(get.encode_to_vec(), vec![0x08, 0xde, 0x01]);
     }
 }
