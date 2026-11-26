@@ -38,7 +38,10 @@ pub fn dial_local(
     paired_frame: Key,
     timeout: Duration,
 ) -> Result<EstablishedTunnel<TcpStream>> {
-    ensure!(!timeout.is_zero(), "network timeout must be greater than zero");
+    ensure!(
+        !timeout.is_zero(),
+        "network timeout must be greater than zero"
+    );
     let stream = TcpStream::connect_timeout(&address, timeout)
         .with_context(|| format!("connect to Frameo at {address}"))?;
     stream.set_read_timeout(Some(timeout))?;
@@ -47,8 +50,11 @@ pub fn dial_local(
         stream,
         identity,
         &[paired_frame],
-        HandshakeMode::Local { protocol: LOCAL_PROTOCOL.to_owned() },
-    ).context("Frameo local SDG handshake")
+        HandshakeMode::Local {
+            protocol: LOCAL_PROTOCOL.to_owned(),
+        },
+    )
+    .context("Frameo local SDG handshake")
 }
 
 #[cfg(test)]
@@ -57,7 +63,7 @@ mod tests {
 
     #[test]
     fn local_instance_matches_advertised_truncated_peer_key() {
-        let peer = Key::from_bytes([0xab;32]);
+        let peer = Key::from_bytes([0xab; 32]);
         assert_eq!(local_instance(peer).len(), 63);
         assert!(matches_instance(&local_instance(peer), peer));
         assert!(matches_instance(&peer.to_hex(), peer));
