@@ -2,16 +2,14 @@ use std::{net::SocketAddr, path::PathBuf, process::ExitCode, time::Duration};
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use frameo_linux::{
-    Unframeo, config::Config, frameo::client::Client, transport::sdg::local::dial_local,
-};
+use frameo_linux::{config::Config, frameo::client::Client, transport::sdg::local::dial_local};
 
 #[derive(Debug, Parser)]
 #[command(
     name = "frameo",
     version,
     about = "Send photos to Frameo digital photo frames",
-    long_about = "Framebridge native Rust support is experimental. Legacy commands still use the temporary unframeo adapter; native-local-send does not."
+    long_about = "Framebridge native Rust support is experimental."
 )]
 struct Cli {
     #[command(subcommand)]
@@ -20,20 +18,6 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
-    /// Pair with a frame using the code displayed on its screen (legacy).
-    Pair {
-        /// The pairing code shown by the Frameo frame.
-        code: String,
-    },
-    /// Upload one or more local photos using the legacy adapter.
-    Upload {
-        /// Optional caption shown with the uploaded photo(s).
-        #[arg(short, long)]
-        caption: Option<String>,
-        /// Image files to upload.
-        #[arg(required = true, value_name = "FILE")]
-        files: Vec<PathBuf>,
-    },
     /// Experimental fully native upload to a *known* local frame TCP address.
     /// Requires an existing paired identity; discovery and relay are not used.
     NativeLocalSend {
@@ -58,10 +42,10 @@ enum Commands {
         #[arg(required = true, value_name = "FILE")]
         files: Vec<PathBuf>,
     },
-    /// List frames already paired with this client (legacy).
+    /// List locally paired frames.
     Frames,
-    /// Discover Frameo frames on the local network (legacy).
-    Discover,
+    /// Generate a new native client identity.
+    Init,
 }
 
 fn main() -> Result<ExitCode> {
@@ -100,13 +84,18 @@ fn main() -> Result<ExitCode> {
         return Ok(ExitCode::SUCCESS);
     }
 
-    let backend = Unframeo::default();
-    let status = match cli.command {
-        Commands::Pair { code } => backend.pair(&code)?,
-        Commands::Upload { caption, files } => backend.upload(&files, caption.as_deref())?,
-        Commands::Frames => backend.frames()?,
-        Commands::Discover => backend.discover()?,
+    match cli.command {
+        Commands::Frames => {
+            let config = Config::load(None)?;
+            for (name, frame) in config.frames {
+                println!("{} {}", name, frame.peer_id);
+            }
+        }
+        Commands::Init => {
+            let config = Config::create_for_pairing(None)?;
+            println!("Created identity at {}", config.path().display());
+        }
         Commands::NativeLocalSend { .. } => unreachable!("handled above"),
-    };
-    Ok(ExitCode::from(status.code().unwrap_or(1) as u8))
+    }
+    Ok(ExitCode::SUCCESS)
 }
