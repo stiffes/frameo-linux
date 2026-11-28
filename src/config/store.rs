@@ -52,17 +52,13 @@ impl std::fmt::Debug for Config {
 }
 
 impl Config {
-    /// Resolve the config path, preserving compatibility with existing
-    /// unframeo installations and their paired identity.
+    /// Resolve the independent Framebridge configuration path.
     pub fn default_path() -> Result<PathBuf> {
-        if let Some(path) = env::var_os("UNFRAMEO_CONFIG").filter(|s| !s.is_empty()) {
-            return Ok(PathBuf::from(path));
-        }
-        if let Some(path) = env::var_os("FRAMEO_CONFIG").filter(|s| !s.is_empty()) {
+        if let Some(path) = env::var_os("FRAMEBRIDGE_CONFIG").filter(|s| !s.is_empty()) {
             return Ok(PathBuf::from(path));
         }
         let dirs = BaseDirs::new().context("cannot determine the user's XDG config directory")?;
-        Ok(dirs.config_dir().join("unframeo").join("config.json"))
+        Ok(dirs.config_dir().join("framebridge").join("config.json"))
     }
 
     /// Load an existing config. This function never creates or rotates an
